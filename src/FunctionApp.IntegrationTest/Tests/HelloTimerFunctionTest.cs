@@ -28,7 +28,7 @@ namespace FunctionApp.IntegrationTest.Tests
         }
 
         [Fact]
-        public void Hello_Timere_Function_Test()
+        public void Hello_Timer_Function_Test()
         {
             this.BDDfy();
         }
@@ -38,29 +38,42 @@ namespace FunctionApp.IntegrationTest.Tests
             await _queue.CreateIfNotExistsAsync();
             await _queue.ClearAsync();
         }
-
-        private async Task When_The_HelloTimer_Function_Is_Invoked()
+        
+        private Task When_The_HelloTimer_Function_Is_Invoked()
         {
-            var response = await _fixture.Client.GetAsync("admin/functions/MyFunction");
-            response.EnsureSuccessStatusCode();
+            return _fixture.InvokeTimerTriggeredFunction("HelloTimer");
         }
 
-        private async Task And_We_Wait_For_A_Queue_Message_To_Be_Enqueuedd()
+        private async Task When_We_Wait_For_A_Queue_Message_To_Be_Enqueued()
         {
+            // try getting the queue message every 2 seconds for 20 seconds
+            // this allows for some delay in the processing of the request
             var timeoutTime = DateTime.UtcNow.AddSeconds(20);
             while (DateTime.UtcNow < timeoutTime)
             {
                 _message = await _queue.GetMessageAsync();
-                if (_message == null)
+                if (_message != null)
                 {
-                    await Task.Delay(2000);
+                    break;
                 }
+
+                await Task.Delay(2000);
             }
         }
 
         private void Then_The_Enqueued_Message_Contents_Should_Be_James_Bond()
         {
             Assert.EndsWith("James Bond", _message.AsString);
+        }
+
+        public Task Setup()
+        {
+            return _fixture.WaitForAppToRespond();
+        }
+
+        public Task TearDown()
+        {
+            return _queue.ClearAsync();
         }
     }
 }

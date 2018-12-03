@@ -8,13 +8,13 @@ namespace FunctionApp
     {
         [FunctionName("HelloTimer")]
         [return: Queue("greetings")]
-        public static string HelloQueue(
+        public static string HelloTimer(
             [TimerTrigger(scheduleExpression: "0 30 9 * * 1")] TimerInfo timerInfo,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
-            return $"Hello, James Bond";
+            return "Hello, James Bond";
         }
     }
 }

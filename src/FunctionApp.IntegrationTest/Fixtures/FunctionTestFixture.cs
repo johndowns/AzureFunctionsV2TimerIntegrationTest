@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using FunctionApp.IntegrationTest.Settings;
 
 namespace FunctionApp.IntegrationTest.Fixtures
@@ -36,6 +39,28 @@ namespace FunctionApp.IntegrationTest.Fixtures
             }
 
             Client.BaseAddress = new Uri($"http://localhost:{Port}");
+        }
+
+        public async Task WaitForAppToRespond()
+        {
+            var timeoutTime = DateTime.UtcNow.AddSeconds(20);
+            while (DateTime.UtcNow < timeoutTime)
+            {
+                var response = await Client.GetAsync("");
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+
+                await Task.Delay(1000);
+            }
+        }
+
+        public async Task InvokeTimerTriggeredFunction(string functionName)
+        {
+            var content = new StringContent("{\"input\":\"\"}", Encoding.Default, "application/json");
+            var response = await Client.PostAsync($"admin/functions/{functionName}", content);
+            response.EnsureSuccessStatusCode();
         }
 
         public virtual void Dispose()
